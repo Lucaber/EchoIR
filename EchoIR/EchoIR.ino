@@ -146,7 +146,8 @@ void redirect(String url) {
 	server.send(301);
 }
 void webRestart() {
-	redirect("/");
+	server.send(200, "text/html", "please wait");
+	delay(1000);
 	ESP.restart();
 }
 void webRoot() {
