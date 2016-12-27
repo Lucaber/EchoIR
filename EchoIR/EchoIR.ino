@@ -60,6 +60,8 @@ void setup() {
 	}
 }
 void callback(const char * device_name, bool state) {
+	Serial.print("Echo: ");
+	Serial.println(device_name);
 	for (int i = 0; i < SAVE_MAX; i++) {
 		if (EEPROM.read(i*SAVE_SIZE + SAVE_I_USED) == 1) {
 			bool correct = true;
@@ -74,6 +76,7 @@ void callback(const char * device_name, bool state) {
 				if ((char)c != device_name[ic]) correct = false;
 			}
 			if (correct) {
+				Serial.println("Found");
 				play(i);
 				break;
 			}
@@ -143,6 +146,7 @@ void redirect(String url) {
 	server.send(301);
 }
 void webRestart() {
+	redirect("/");
 	ESP.restart();
 }
 void webRoot() {
@@ -186,6 +190,7 @@ void webSave() {
 void webDel() {
 	int id = server.arg("id").toInt();
 	EEPROM.write(id*SAVE_SIZE + SAVE_I_USED, 255);
+	EEPROM.commit();
 	redirect("/");
 }
 
