@@ -25,6 +25,9 @@ String webfoot = "</body></html>";
 bool savenext = false;
 String savenextname;
 
+#include "pw.h"
+//#define WIFI_SSID "..."
+//#define WIFI_PASS "....."
 #define SAVE_MAX 10
 #define SAVE_SIZE 100
 #define SAVE_I_USED 0
