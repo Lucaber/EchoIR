@@ -1,7 +1,7 @@
 /*
  Name:		EchoIR.ino
  Created:	12/26/2016 11:06:14 PM
- Author:	luca
+ Author:	Luca Berneking
 */
 
 #include <Arduino.h>
@@ -34,6 +34,7 @@ String savenextname;
 #define SAVE_I_LENGTH 1
 #define SAVE_NAME 2
 #define SAVE_DATA 15
+
 void setup() {
 	Serial.begin(115200);
 	wifiSetup();
@@ -57,30 +58,6 @@ void setup() {
 			fauxmo.addDevice(namea);
 		}
 		fauxmo.onMessage(callback);
-	}
-}
-void callback(const char * device_name, bool state) {
-	Serial.print("Echo: ");
-	Serial.println(device_name);
-	for (int i = 0; i < SAVE_MAX; i++) {
-		if (EEPROM.read(i*SAVE_SIZE + SAVE_I_USED) == 1) {
-			bool correct = true;
-			for (int ic = 0; ic < 13; ic++) {
-				int c = EEPROM.read(i*SAVE_SIZE + SAVE_NAME + ic);
-				if (c == 255) {
-					if (device_name[ic] != '\0')
-						correct = false;
-					break;
-				}
-					
-				if ((char)c != device_name[ic]) correct = false;
-			}
-			if (correct) {
-				Serial.println("Found");
-				play(i);
-				break;
-			}
-		}
 	}
 }
 
@@ -140,11 +117,13 @@ void OTASetup() {
 	});
 	ArduinoOTA.begin();
 }
+
 void redirect(String url) {
 	server.sendHeader("Location", url);
 	server.sendHeader("Cache-Control", "no-cache");
 	server.send(301);
 }
+
 void webRestart() {
 	server.send(200, "text/html", "please wait");
 	delay(1000);
@@ -187,14 +166,12 @@ void webSave() {
 	}
 	redirect("/");
 }
-
 void webDel() {
 	int id = server.arg("id").toInt();
 	EEPROM.write(id*SAVE_SIZE + SAVE_I_USED, 255);
 	EEPROM.commit();
 	redirect("/");
 }
-
 void webPlay() {
 	Serial.println("Play");
 	int id = server.arg("id").toInt();
@@ -205,12 +182,36 @@ void webPlay() {
 	redirect("/");
 }
 
+void callback(const char * device_name, bool state) {
+	Serial.print("Echo: ");
+	Serial.println(device_name);
+	for (int i = 0; i < SAVE_MAX; i++) {
+		if (EEPROM.read(i*SAVE_SIZE + SAVE_I_USED) == 1) {
+			bool correct = true;
+			for (int ic = 0; ic < 13; ic++) {
+				int c = EEPROM.read(i*SAVE_SIZE + SAVE_NAME + ic);
+				if (c == 255) {
+					if (device_name[ic] != '\0')
+						correct = false;
+					break;
+				}
+
+				if ((char)c != device_name[ic]) correct = false;
+			}
+			if (correct) {
+				Serial.println("Found");
+				play(i);
+				break;
+			}
+		}
+	}
+}
+
 void loop() {
 	if (savenext) { savenext = !save(); }
 	server.handleClient();
 	ArduinoOTA.handle();
 }
-
 
 void play(int id) {
 	if (id >= SAVE_MAX) return;
@@ -223,8 +224,6 @@ void play(int id) {
 	}
 	irsend.sendRaw(raw, len, 38);
 }
-
-
 bool save() {
 	if (irrecv.decode(&results)) {
 		int id = 0;
